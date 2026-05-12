@@ -1,0 +1,77 @@
+#include <WiFi.h>
+#include <SinricPro.h>
+#include <SinricProSwitch.h>
+#include <ESP32Servo.h>
+
+const char* ssid = "YOUR WIFI NAME";
+const char* password = "YOUR PASSWORD";
+
+// FROM SINRIC PRO
+#define APP_KEY       "YOUR APP KEY"
+#define APP_SECRET    "YOUR APP SECRET"
+#define DEVICE_ID     "YOUR DEVICE ID"
+
+Servo myservo;
+
+// Google Assistant ON/OFF callback
+bool onPowerState(const String &deviceId, bool &state) {
+
+  // ON command
+  if (state) {
+
+    myservo.write(67);
+    delay(500);
+    myservo.write(90);
+
+    Serial.println("Switch ON");
+  }
+
+  // OFF command
+  else {
+
+    myservo.write(115);
+    delay(500);
+    myservo.write(90);
+
+    Serial.println("Switch OFF");
+  }
+
+  return true;
+}
+
+void setup() {
+
+  Serial.begin(115200);
+
+  myservo.attach(13);
+  myservo.write(90);
+
+  // Connect WiFi
+  WiFi.begin(ssid, password);
+
+  Serial.print("Connecting");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi Connected");
+
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // Setup Sinric device
+  SinricProSwitch &mySwitch = SinricPro[DEVICE_ID];
+
+  mySwitch.onPowerState(onPowerState);
+
+  // Start Sinric Pro
+  SinricPro.begin(APP_KEY, APP_SECRET);
+}
+
+void loop() {
+
+  SinricPro.handle();
+}
